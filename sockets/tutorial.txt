@@ -1,0 +1,100 @@
+Here we have a scratch pad for our notes on how sockets work.
+
+
+
+In the Internet model, the application layer is an abstraction layer reserved for communications protocols and methods designed for process-to-process communications across an Internet Protocol (IP) computer network.
+
+To manage the connection between application layer network protocols, TCP and UDP use ports and sockets.   TCP and UDP operate at the host-to-host layer in the IP communication model and provide host-to-host communication services for the application layer protocol. This means an application layer protocol is on one IP host connecting to an application layer protocol on another IP host.
+
+In most situations, these host-to-host connections have a sever process running on one host and a client process running on the other host. Examples of this host-to-host connection include a web browser connecting to a web server; or a Secure Copy Protocol (SCP) client (such as WinSCP) connecting to an SCP server.
+
+A port is a TCP or UDP connection point. Think of them as receptacles on an old-fashioned telephone switchboard. There are 65,536 (or 2^16) ports available for a host to manage connections, numbered from 0 to 65,535 for each TCP and UDP. When you establish an application server running on an IP host, you configure that server to be used (or bound to) a specific TCP or UDP port.
+
+   *** In our case (udp_send.c and udpSend.py), we don't specify the port that we are going to use to send stuff out.  This is instead assigned to us, as you can see with netstat -aup: each time udp_send.c (or dataTransmit.c) is started up, we see a new port number being used.
+
+By associating the application layer server to use a specific port, you have created a destination that a remote IP host can connect to.
+
+When the remote IP host connects to an application layer server, the connection the host makes is to a port operating on a specific IP host (identified by an IP address). This pairing of an IP address and a port as a connection endpoint is a socket.
+
+
+EXAMPLE:
+
+This example will walk you thru the process of connecting to a website, such as Wiley. You would open your web browser (like Mozilla Firefox) and type www.wiley.com into the address bar. Your web browser uses a Domain Name System (DNS) server to look up the name www.wiley.com to identify its IP address is. For this example, the address is 192.0.2.100.
+
+Firefox makes a connection to the 192.0.2.100 address and to the port where the application layer web server is operating. Firefox knows what port to expect because it is a well-known port . The well-known port for a web server is TCP port 80.
+
+The destination socket that Firefox attempts to connect is written as socket:port, or in this example, 192.0.2.100:80. This is the server side of the connect, but the server needs to know where to send the web page you want to view in Mozilla Firefox, so you have a socket for the client side of the connection also.
+
+The client side connection is made up of your IP address, such as 192.168.1.25, and a randomly chosen dynamic port number. The socket associated with Firefox looks like 192.168.1.25:49175. Because web servers operate on TCP port 80, both of these sockets are TCP sockets, whereas if you were connecting to a server operating on a UDP port, both the server and client sockets would be UDP sockets.
+
+
+---------------
+
+UDP = User Datagram Protocol - a postcard
+TCP = Transmission Control Protocol - a phone call
+
+UDP:
+ When it comes to moving all that information across the Internet there is not only one choice when it comes to transport protocols. There are two. Namely, TCP and UDP. In this article we will look at the User Datagram Protocol, aka UDP.
+
+Most everyone is already familiar with TCP as a transport protocol. Not as many though are as knowledgeable with UDP as a transport protocol. That is for a good reason. Almost every piece of data out there whether it be application, session, or other layer is transported via trusty old TCP. This brings to mind another thing I hear quite often from people, ¿Yes, TCP is guaranteed to get there, you know.¿ This statement, in fact, is quite wrong.
+
+TCP or Transmission Control Protocol is only connection oriented. UDP or User Datagram Protocol however is connectionless. What does that mean exactly? Well, if you have read the articles of mine on TCP you will have noted that TCP has a great many metrics included in its header. These very same metrics, i.e.: TCP sequence number, acknowledgement number, are what makes it connection oriented. Lastly, TCP had a standard header length of twenty bytes, vice eight for UDP.
+
+How does UDP differ?
+
+Well our UDP protocol only has a length of eight bytes to be exact. That is twelve bytes less then TCP. Due to this, UDP is much faster as there is less to transmit. An extra twelve bytes may not sound like a lot, but multiply it by thousands of packets, and you will quickly notice a difference on your network. Seen as an UDP header is that much smaller, exactly what does it look like, you ask? Good question! Please see below for a diagram of what a UDP header looks like.
+
+    _____________________________________________________
+    Two byte source port number |  Two byte destination port number
+    _____________________________________________________
+    Two byte UDP packet length  |  Two bytes UDP checksum value
+    _____________________________________________________
+                                          Data if any
+
+So we can see from the above that not having the extra twelve bytes of overhead in the UDP header does indeed make a substantial difference. This would account for the lack of ¿connection oriented¿ for UDP. You may note, that we also have a checksum in the header for UDP. I would like to take this time to point out that all of the four core protocols, those being; IP, TCP, UDP, ICMP all have checksums. In all of the four core protocols the checksum will cover the protocol header and any data, if present. One of the last things I would like to mention about UDP and its checksum is that its use is optional. In essence, it does not have to be used, whereas in TCP, ICMP, and IP, it does.
+Is it guaranteed? Heck no!
+
+Well, now knowing that UDP actually offers no guarantees of delivery, much less any built in metrics for it, why would you want to use it? With that in mind, it is normally decided by the developer, aka the programmer, what transport protocol they want to use when designing a new application, or other layer protocol. There could very well be instances where speed and size of a packet is a consideration. Should these factors be a consideration to the developer then the odds are that they will choose UDP as their transport protocol.
+
+Hmmmmm, well all that is good and great, but do any application layer, or other protocols actually use UDP? Excellent question, and the answer is yes. There are quite a few applications that use UDP for transport. One of the best known to most is DNS or domain name system. 
+
+
+
+                                          
+--------------
+
+Checksum:
+
+A UDP header is only 8 bytes, 2 of which is a Checksum.   What's a checksum?
+
+IPv4 header checksum refers to the basic protection used in the header of IPv4 packets against data corruption. This checksum is calculated only for the header bytes (with the checksum bytes set to 0), is 16 bits long and is a part of the IP packet header.
+
+The checksum is calculated by forming the ones' complement of the ones' complement sum of the header's 16-bit words.[1] The result of summing the entire IP header, including checksum, should be zero if there is no corruption. At each hop, the checksum is recalculated and the packet will be discarded upon checksum mismatch. The router must adjust the checksum if it changes part of the IP header (such as when decrementing the TTL.)
+
+Example: Calculating a checksum
+
+Take the following truncated excerpt of an IP packet. The header is shown in bold and the checksum is underlined.
+4500 0073 0000 4000 4011 <underlined>b861</underlined> c0a8 0001
+c0a8 00c7 0035 e97c 005f 279f 1e4b 8180
+
+To calculate the checksum, we can first calculate the sum of each 16 bit value within the header, skipping only the checksum field itself. Note that the values are in hexadecimal notation.
+4500 + 0073 + 0000 + 4000 + 4011 + c0a8 + 0001 + c0a8 + 00c7 = 2479C (equivalent to 149,404 in decimal)
+Next, we convert the value 2479C to binary:
+0010 0100 0111 1001 1100
+The first 4 bits are the carry and will be added to the rest of the value:
+0010 + 0100 0111 1001 1100 = 0100 0111 1001 1110
+Next, we flip every bit in that value, to obtain the checksum:
+0100 0111 1001 1110 becomes:
+1011 1000 0110 0001
+This is equal to B861 in hexadecimal, as shown underlined in the original IP packet header.
+Example: Verifying a checksum
+
+When verifying a checksum, the same procedure is used as above, except that the original header checksum is not omitted.
+4500 + 0073 + 0000 + 4000 + 4011 + b861 + c0a8 + 0001 + c0a8 + 00c7 = 2fffd
+Add the carry bits:
+fffd + 2 = ffff
+Taking the ones' complement (flipping every bit) yields 0000, which indicates that no error is detected. IP header checksum does not check for the correct order of 16 bit values within the header.
+
+----------------
+
+

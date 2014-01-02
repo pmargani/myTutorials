@@ -1,0 +1,2 @@
+#define PACKET_SIZE 8160
+#define PORT_NUM 50000
